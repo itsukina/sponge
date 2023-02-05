@@ -8,13 +8,8 @@ using namespace std;
 
 
 void get_URL(const string &host, const string &path) {
-    // You will need to connect to the "http" service on
-    // the computer whose name is in the "host" string,
-    // then request the URL path given in the "path" string.
 
-    // Then you'll need to print out everything the server sends back,
-    // (not just one call to read() -- everything) until you reach
-    // the "eof" (end of file).
+    // Your code here
     TCPSocket socket;
 
     try {
@@ -34,6 +29,14 @@ void get_URL(const string &host, const string &path) {
     }
     cout << buf;
     socket.close();
+
+    // You will need to connect to the "http" service on
+    // the computer whose name is in the "host" string,
+    // then request the URL path given in the "path" string.
+
+    // Then you'll need to print out everything the server sends back,
+    // (not just one call to read() -- everything) until you reach
+    // the "eof" (end of file).
 }
 
 int main(int argc, char *argv[]) {
