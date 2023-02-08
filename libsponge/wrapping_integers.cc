@@ -1,12 +1,14 @@
 #include "wrapping_integers.hh"
 
+#include "iostream"
+
 // Dummy implementation of a 32-bit wrapping integer
 
 // For Lab 2, please replace with a real implementation that passes the
 // automated checks run by `make check_lab2`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -15,7 +17,7 @@ using namespace std;
 //! \param isn The initial sequence number
 WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
     DUMMY_CODE(n, isn);
-    return WrappingInt32{0};
+    return isn + static_cast<uint32_t>(n);
 }
 
 //! Transform a WrappingInt32 into an "absolute" 64-bit sequence number (zero-indexed)
@@ -30,5 +32,9 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
 //! has a different ISN.
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     DUMMY_CODE(n, isn, checkpoint);
-    return {};
+    auto abs = n - wrap(checkpoint, isn);
+    if(abs < 0 && checkpoint == 0){
+        checkpoint = static_cast<uint64_t>(1) << 32;
+    }
+    return checkpoint + abs;
 }
