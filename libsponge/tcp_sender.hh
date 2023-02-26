@@ -7,7 +7,9 @@
 #include "wrapping_integers.hh"
 
 #include <functional>
+#include <list>
 #include <queue>
+#include <unordered_map>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -31,6 +33,34 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    size_t _elapsed_time{};
+
+    size_t _window_size{1};
+
+    std::unordered_map<uint32_t, TCPSegment> _segments_out_cache{};
+
+    enum TCPState { CLOSED, SYN_SENT, SYN_ACKED, FIN_SENT, FIN_ACKED } _state{};
+
+    class RetransmissionTimer {
+      private:
+        struct Timer {
+            unsigned int _initial_retransmission_timeout{};
+            size_t _elapsed_time{};
+        };
+
+        std::unordered_map<uint32_t, Timer> _timer_map{};
+
+      public:
+        //! Initialize a Timer for seqno
+        void start(const WrappingInt32 seqno, const uint16_t retx_timeout);
+
+        //! Stop a Timer for seqno
+        void stop(const WrappingInt32 seqno);
+
+        //! Check each seqno timer when tick() is called
+        std::list<WrappingInt32> expire(const size_t ms_since_last_tick);
+    } _retransmission_timer{};
 
   public:
     //! Initialize a TCPSender
@@ -87,6 +117,8 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+
+    void send_segment(WrappingInt32 seqno, bool syn = false, bool fin = false, std::string &&payload = std::string{});
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
