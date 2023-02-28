@@ -38,28 +38,35 @@ class TCPSender {
 
     size_t _window_size{1};
 
-    std::unordered_map<uint32_t, TCPSegment> _segments_out_cache{};
-
     enum TCPState { CLOSED, SYN_SENT, SYN_ACKED, FIN_SENT, FIN_ACKED } _state{};
 
     class RetransmissionTimer {
       private:
         struct Timer {
-            unsigned int _initial_retransmission_timeout{};
+            unsigned int _retransmission_timeout{};
             size_t _elapsed_time{};
+            // size_t _resend_count{};
         };
+
+        unsigned int _retransmission_count{};
 
         std::unordered_map<uint32_t, Timer> _timer_map{};
 
+        std::unordered_map<uint32_t, TCPSegment> _segments_out_cache{};
+
       public:
         //! Initialize a Timer for seqno
-        void start(const WrappingInt32 seqno, const uint16_t retx_timeout);
+        void start(const uint32_t ackno, const uint16_t retx_timeout, const TCPSegment &segment);
 
         //! Stop a Timer for seqno
-        void stop(const WrappingInt32 seqno);
+        void stop(const uint32_t ackno);
 
         //! Check each seqno timer when tick() is called
-        std::list<WrappingInt32> expire(const size_t ms_since_last_tick);
+        void expire(const size_t ms_since_last_tick, std::queue<TCPSegment> &segments_out);
+
+        unsigned int consecutive_retransmissions() const;
+
+        uint16_t cache_size() const;
     } _retransmission_timer{};
 
   public:
