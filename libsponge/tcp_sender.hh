@@ -8,8 +8,8 @@
 
 #include <functional>
 #include <list>
+#include <map>
 #include <queue>
-#include <unordered_map>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -38,36 +38,36 @@ class TCPSender {
 
     size_t _window_size{1};
 
-    enum TCPState { CLOSED, SYN_SENT, SYN_ACKED, FIN_SENT, FIN_ACKED } _state{};
+    bool _nonzero{true};
 
     class RetransmissionTimer {
       private:
-        struct Timer {
-            unsigned int _retransmission_timeout{};
-            size_t _elapsed_time{};
-            // size_t _resend_count{};
-        };
+        unsigned int _initial_retransmission_timeout;
+
+        unsigned int _retransmission_timeout;
+
+        size_t _elapsed_time{};
 
         unsigned int _retransmission_count{};
 
-        std::unordered_map<uint32_t, Timer> _timer_map{};
-
-        std::unordered_map<uint32_t, TCPSegment> _segments_out_cache{};
+        std::map<uint32_t, TCPSegment> _segments_out_cache{};
 
       public:
+        RetransmissionTimer(const unsigned int retx_timeout);
+
         //! Initialize a Timer for seqno
-        void start(const uint32_t ackno, const uint16_t retx_timeout, const TCPSegment &segment);
+        void start(const uint32_t ackno, const TCPSegment &segment);
 
         //! Stop a Timer for seqno
         void stop(const uint32_t ackno);
 
         //! Check each seqno timer when tick() is called
-        void expire(const size_t ms_since_last_tick, std::queue<TCPSegment> &segments_out);
+        void tick(const size_t ms_since_last_tick, std::queue<TCPSegment> &segments_out, const bool nonzero);
 
         unsigned int consecutive_retransmissions() const;
 
         uint16_t cache_size() const;
-    } _retransmission_timer{};
+    } _retransmission_timer{_initial_retransmission_timeout};
 
   public:
     //! Initialize a TCPSender
