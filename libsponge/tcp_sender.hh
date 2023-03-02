@@ -7,6 +7,8 @@
 #include "wrapping_integers.hh"
 
 #include <functional>
+#include <list>
+#include <map>
 #include <queue>
 
 //! \brief The "sender" part of a TCP implementation.
@@ -31,6 +33,41 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    size_t _elapsed_time{};
+
+    size_t _window_size{1};
+
+    bool _nonzero{true};
+
+    class RetransmissionTimer {
+      private:
+        unsigned int _initial_retransmission_timeout;
+
+        unsigned int _retransmission_timeout;
+
+        size_t _elapsed_time{};
+
+        unsigned int _retransmission_count{};
+
+        std::map<uint32_t, TCPSegment> _segments_out_cache{};
+
+      public:
+        RetransmissionTimer(const unsigned int retx_timeout);
+
+        //! Initialize a Timer for seqno
+        void start(const uint32_t ackno, const TCPSegment &segment);
+
+        //! Stop a Timer for seqno
+        void stop(const uint32_t ackno);
+
+        //! Check each seqno timer when tick() is called
+        void tick(const size_t ms_since_last_tick, std::queue<TCPSegment> &segments_out, const bool nonzero);
+
+        unsigned int consecutive_retransmissions() const;
+
+        uint16_t cache_size() const;
+    } _retransmission_timer{_initial_retransmission_timeout};
 
   public:
     //! Initialize a TCPSender
@@ -87,6 +124,8 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+
+    void send_segment(WrappingInt32 seqno, bool syn = false, bool fin = false, std::string &&payload = std::string{});
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
